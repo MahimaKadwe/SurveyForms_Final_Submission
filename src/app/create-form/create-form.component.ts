@@ -4,6 +4,7 @@ import {
   copyArrayItem,
   moveItemInArray,
 } from '@angular/cdk/drag-drop';
+import {ScrollingModule} from '@angular/cdk/scrolling';
 import { HeadComponent } from '../head/head.component';
 import { ShortAnsComponent } from '../short-ans/short-ans.component';
 import { NumberComponent } from '../number/number.component';
@@ -12,6 +13,10 @@ import { DateComponent } from '../date/date.component';
 import { SingleCorrectComponent } from '../single-correct/single-correct.component';
 import { MultipleCorrectComponent } from '../multiple-correct/multiple-correct.component';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import axios from 'axios';
+import { IntegerType } from 'mongodb';
+
+
 
 const formElementsMapping = {
   Title: 'app-head',
@@ -29,21 +34,35 @@ const formElementsMapping = {
   styleUrls: ['create-form.component.scss'],
 })
 export class CreateFormComponent {
+  
+  event: any;
   constructor(public httpclient: HttpClient) {}
+
+  toarray(){
+    document.getElementById("example-viewport")?.scrollIntoView({behavior:"smooth"});
+  }
 
   formElements = [
     'Title',
     'Short Answer',
     'Number',
     'Email',
-    // 'Date',
-    // 'Single Correct',
-    // 'Multiple Correct',
+    'Date',
+    'Single Correct',
+    'Multiple Correct',
   ];
 
-  mainForm = ['Title', 'Short Answer', 'Number', 'Email'];
+  mainForm = ['Title', 'Short Answer', 'Number', 'Single Correct'];
 
-  drop(event: CdkDragDrop<any>) {
+  items = Array.from({length: 100000}).map((_, i) => `Item #${i}`);
+
+  deleteTask(i: number){
+    this.mainForm.splice(i, 1)
+      } 
+
+ i: any;
+
+  async drop(event: CdkDragDrop<any>) {
     if (event.previousContainer === event.container) {
       moveItemInArray(
         event.container.data,
@@ -92,71 +111,132 @@ export class CreateFormComponent {
   multipleCorrectComponent!: MultipleCorrectComponent;
 
   onFormSubmit() {
+
     const formData: any[] = [];
+
     for (let i = 0; i < this.mainForm.length; i++) {
       if (this.mainForm[i] in formElementsMapping) {
         const key = this.mainForm[i] as keyof typeof formElementsMapping;
-        switch (key) {
-          case 'Title':
-            formData.push({
-              type: key,
-              data: this.headComponent.getValue(),
-            });
-            break;
-          case 'Short Answer':
-            formData.push({
-              type: key,
-              data: this.shortAnsComponent.getValue(),
-            });
-            break;
-          case 'Number':
-            formData.push({
-              type: key,
-              data: this.numberComponent.getValue(),
-            });
-            break;
-          case 'Email':
-            formData.push({
-              type: key,
-              data: this.emailComponent.getValue(),
-            });
-            break;
-          case 'Date':
-            formData.push({
-              type: key,
-              data: this.dateComponent.getValue(),
-            });
-            break;
-          case 'Single Correct':
-            formData.push({
-              type: key,
-              data: this.singleCorrectComponent.getValue(),
-            });
-            break;
-          case 'Multiple Correct':
-            formData.push({
-              type: key,
-              data: this.multipleCorrectComponent.getValue(),
-            });
-            break;
-          default:
-            break;
+        const component = this.getComponentForKey(key);
+        for (let j = 0; j < component.length; j++) {
+          formData.push({
+            type: key,
+            data: component[j].getValue(),
+          });
         }
       }
     }
 
-    let headers1 = new HttpHeaders({
-      'content-Type': 'application/json',
-    });
-
+   
+    ////// Code for chinmay starts here /////
+    console.log('--------original----------');
     console.log(formData);
+    console.log('--------converted form data----------');
+const input = formData;
+
+const output = {
+  title: '',
+  description: 'form description',
+  questions: [] as {
+    questionContent: string;
+    questionType: string;
+    questionNumber: number;
+  }[],
+};
+
+let questionNumber = 1;
+
+for (let i = 0; i < input.length; i++) {
+  const obj = input[i];
+
+  if (obj.type === 'Title') {
+    output.title = obj.data.formTitle;
+  } else if (obj.type !== 'Description') {
+    const questionObj = {
+      questionContent: obj.data.question,
+      questionType: obj.type,
+      questionNumber: questionNumber,
+    };
+
+
+
+    output.questions.push(questionObj);
+
+    questionNumber++;
+  }
+}
+
+console.log(output);
+
+
+    ///// Code for chinmay ends here /////
+
+
+
+
+
+
+    // console.log(formData);
     // Store formData in the database
+   let token;
+   let token_parse;
+   const auth_token=localStorage.getItem("currentuser")
+   console.log(auth_token)
+   if(auth_token){
+    token_parse=JSON.parse(auth_token)
+    token=token_parse["data"]["token"]
+    console.log("extract the token ", token)
+   }
+   let headers1 = new HttpHeaders({
+    'content-Type': 'application/json',
+    'authorization':'Bearer '+token 
+  });
 
     this.httpclient
-      .post('http://localhost:7600/create_form', formData, { headers: headers1 })
+      .post('http://localhost:5000/form/', output, {
+        headers: headers1,
+      })
       .subscribe((response) => {
         console.log(response);
       });
 
+      // const apiRsp=axios.post('http://localhost:5000/form/',{
+      //   headers:{
+      //     'content-Type': 'application/json',
+      //     'authorization':'Bearer '+token 
+
+      //   },
+      //   formData
+      // })
+
+
+
+
+
+  }
+
+
+
+
+
+  getComponentForKey(key: string) {
+    switch (key) {
+      case 'Title':
+        return [this.headComponent];
+      case 'Short Answer':
+        return [this.shortAnsComponent];
+      case 'Number':
+        return [this.numberComponent];
+      case 'Email':
+        return [this.emailComponent];
+      case 'Date':
+        return [this.dateComponent];
+      case 'Single Correct':
+        return [this.singleCorrectComponent];
+      case 'Multiple Correct':
+        return [this.multipleCorrectComponent];
+      default:
+        return [];
+    }
   }
 }
