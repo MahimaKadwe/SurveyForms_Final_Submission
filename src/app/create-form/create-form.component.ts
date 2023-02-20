@@ -36,12 +36,19 @@ export class CreateFormComponent {
     'Short Answer',
     'Number',
     'Email',
-    // 'Date',
-    // 'Single Correct',
-    // 'Multiple Correct',
+    'Date',
+    'Single Correct',
+    'Multiple Correct',
   ];
 
   mainForm = ['Title', 'Short Answer', 'Number', 'Email'];
+  
+  items = Array.from({length: 100000}).map((_, i) => `Item #${i}`);
+    deleteTask(i: number){
+    this.mainForm.splice(i, 1)
+      } 
+
+ i: any;
 
   drop(event: CdkDragDrop<any>) {
     if (event.previousContainer === event.container) {
