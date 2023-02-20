@@ -30,6 +30,8 @@
           <app-number #numberComponent *ngSwitchCase="'Number'"></app-number>
           <app-email #emailComponent *ngSwitchCase="'Email'"></app-email>
           <app-date #dateComponent *ngSwitchCase="'Date'"></app-date>
+           <button class = "delete" (click)="deleteTask(i)"><i class="fa fa-trash" aria-hidden="true"></i></button>
+          
           <app-single-correct
             #singleCorrectComponent
             *ngSwitchCase="'Single Correct'"
